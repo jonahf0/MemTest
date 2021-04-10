@@ -1,0 +1,2 @@
+    A simple "wrapper" for testing memory usage of applications on Linux systems. 
+Due to the inaccuracy / variability of memory usage metrics given by the /proc files, multiple metrics are given so developers can make judgements based on what they are looking for. 
