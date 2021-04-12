@@ -24,7 +24,7 @@ fn print_result(list: Vec<HashMap<String, String>>) {
 
                     previous_data = current_data;
                 }
-                
+
             }
     }
 }
@@ -156,5 +156,11 @@ fn main() {
 
     print_result(mem_info_list);
 
-    waiting_thread.join();
+    match waiting_thread.join() {
+
+        Ok(_) => {},
+
+        Err(err) => println!("{:?}", err)
+
+    }
 }
