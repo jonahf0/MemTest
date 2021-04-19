@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::process::{exit, Command};
 use std::sync::mpsc::channel;
 use std::{thread, time};
@@ -10,17 +10,20 @@ mod read_proc;
 use print_results::*;
 use read_proc::*;
 
+//runs the process for taking measurements
 fn run_process(executable: &str, exec_args: Vec<&str>, interval: (u64, &str)) {
 
-    let interval_val = if interval.1 == "ms" { interval.0 }
+    let interval_val = if interval.1 == "us" { interval.0 / 1000 }
     
     else {
-        interval.0 / 1000
+        interval.0 
     } ;
 
     let interval_unit = interval.1;
 
-    let mut mem_info_list: Vec<HashMap<String,String>> = Vec::new();
+    let mut mem_info_list: BTreeMap<u64, HashMap<String,String>> = BTreeMap::new();
+
+    let mut time_variable: u64 = 0;
 
      //run the process; if there is an error, then print the error for user's benefit
      let mut proc_child = match Command::new(executable).args(exec_args).spawn() {
@@ -57,10 +60,16 @@ fn run_process(executable: &str, exec_args: Vec<&str>, interval: (u64, &str)) {
         let mem_info = read_smaps_rollup(pid);
 
         match mem_info {
-            Some(map) => mem_info_list.push(map),
 
-            None => {}
-        };
+            None => {},
+
+            Some(map) => 
+                {
+                    mem_info_list.insert(time_variable ,map);
+                }
+        }
+
+        time_variable += interval_val;
     }
 
     print_smaps_result(mem_info_list, interval_unit);
@@ -86,7 +95,7 @@ fn main() {
     .arg(Arg::with_name("executable args")
         .help("The arguments to pass to the executable")
         .multiple(true)
-        .required(true))
+        .required(false))
     .get_matches();
 
     /*just a variable for keeping track of how many ms to wait before reading smaps;
