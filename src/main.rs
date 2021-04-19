@@ -51,11 +51,7 @@ fn run_process(executable: &str, exec_args: Vec<&str>, interval: (u64, &str)) {
     });
 
     //waits for the child thread to finish; recv_timeout() will return an Err() if it timesout
-    while if let Ok(_) = loop_rx.recv_timeout(time::Duration::from_millis(interval_val)) {
-        false
-    } else {
-        true
-    } {
+    loop {
 
         let mem_info = read_smaps_rollup(pid);
 
@@ -70,6 +66,10 @@ fn run_process(executable: &str, exec_args: Vec<&str>, interval: (u64, &str)) {
         }
 
         time_variable += interval_val;
+
+        if let Ok(_) = loop_rx.recv_timeout(time::Duration::from_millis(interval_val)) {
+            break
+        }
     }
 
     print_smaps_result(mem_info_list, interval_unit);
