@@ -13,16 +13,23 @@ use read_proc::*;
 //runs the process for taking measurements
 fn run_process(executable: &str, exec_args: Vec<&str>, interval: (u64, &str)) {
 
-    let interval_val = if interval.1 == "us" { interval.0 / 1000 }
-    
-    else {
-        interval.0 
-    } ;
+    //"dissect" the interval tuple, just for fun
+    let interval_val = match interval.1 {
+
+        "us" => interval.0,
+
+        "ms" => interval.0 * 1000,
+
+        _ => 1
+
+    };
 
     let interval_unit = interval.1;
 
+    //the BTreeMap to pass to the print functions
     let mut mem_info_list: BTreeMap<u64, HashMap<String,String>> = BTreeMap::new();
 
+    //variable used to track time in the loop
     let mut time_variable: u64 = 0;
 
      //run the process; if there is an error, then print the error for user's benefit
@@ -53,21 +60,24 @@ fn run_process(executable: &str, exec_args: Vec<&str>, interval: (u64, &str)) {
     //waits for the child thread to finish; recv_timeout() will return an Err() if it timesout
     loop {
 
+        
+        let start_time = time::Instant::now(); 
+        
         let mem_info = read_smaps_rollup(pid);
 
-        match mem_info {
+        let elapsed_time = start_time.elapsed().as_micros();
 
-            None => {},
+        if let Some(map) = mem_info {  
 
-            Some(map) => 
-                {
-                    mem_info_list.insert(time_variable ,map);
-                }
+            time_variable += elapsed_time as u64;
+            println!("{} + {}", time_variable, elapsed_time);
+            mem_info_list.insert(time_variable ,map);
+
         }
 
         time_variable += interval_val;
 
-        if let Ok(_) = loop_rx.recv_timeout(time::Duration::from_millis(interval_val)) {
+        if let Ok(_) = loop_rx.recv_timeout(time::Duration::from_micros(interval_val)) {
             break
         }
     }
