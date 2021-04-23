@@ -18,19 +18,28 @@ pub fn print_smaps_result(mem_info: BTreeMap<u64, HashMap<String, String>>, unit
             true => {}
 
             false => {
-                let time_passed = match unit {
-                    "us" => key,
 
-                    "ms" => key / 1000,
+                print_formatted_time(key, unit);
 
-                    _ => key,
-                };
-
-                println!("[{} {}]:", time_passed, unit);
                 println!("{}", current_data);
 
                 previous_data = current_data;
             }
         }
     }
+}
+
+fn print_formatted_time(key: u64, unit: &str) {
+
+    let time_passed = match unit {
+        
+        "us" => key, 
+
+        "ms" => key / 1000,
+
+        _ => key,
+    };
+
+    println!("[{} {}]:", time_passed, unit);
+
 }
