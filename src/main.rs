@@ -11,7 +11,7 @@ use print_results::*;
 use read_proc::*;
 
 //runs the process for taking measurements
-fn run_process(executable: &str, exec_args: Vec<&str>, interval: (u64, &str)) {
+fn run_process(executable: &str, exec_args: Vec<&str>, interval: (u64, &str)) -> BTreeMap<u64, HashMap<String, String>> {
     //"dissect" the interval tuple, just for fun
     let interval_val = match interval.1 {
         "us" => interval.0,
@@ -67,30 +67,30 @@ fn run_process(executable: &str, exec_args: Vec<&str>, interval: (u64, &str)) {
 
         if let Some(map) = mem_info {
             time_variable += elapsed_time as u64;
-            println!("{} + {}", time_variable, elapsed_time);
             mem_info_list.insert(time_variable, map);
-        }
+        } 
 
         time_variable += interval_val;
-
+        
         if let Ok(_) = loop_rx.recv_timeout(time::Duration::from_micros(interval_val)) {
             break;
         }
     }
-
-    print_smaps_result(mem_info_list, interval_unit);
 
     match waiting_thread.join() {
         Ok(_) => {}
 
         Err(err) => println!("{:?}", err),
     }
+
+    return mem_info_list
 }
 
 fn main() {
     //use the clap crate to parse the arguments
     let matches = App::new("mem_test").about("\nDesigned to act as a simple command-line wrapper to test\nmemory usage of a program during its lifetime (think like the time utility)")
     .arg(Arg::from_usage("--interval [NUMBER] [UNIT] 'optional interval (in milliseconds [ms] or microseconds [us])\nto check memory usage; default is 1 millisecond'"))
+    .arg(Arg::from_usage("--output [FILE] 'file location to write output to'"))
     .arg(Arg::with_name("executable")
         .help("The executable to use")
         .required(true))
@@ -153,7 +153,17 @@ fn main() {
 
             empty_vec
         }
-    };
+    }; 
 
-    run_process(executable, exec_args, interval);
+    let mem_info = run_process(executable, exec_args, interval);
+
+    match matches.value_of("output") {
+
+
+        Some(location) => println!("writing to file not currently implemented!"),//write_to_file(mem_info, location),
+
+        None => print_smaps_result(mem_info, interval.1)
+
+
+    }
 }
