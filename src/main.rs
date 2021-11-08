@@ -8,8 +8,8 @@ use std::{thread, time};
 mod print_results;
 mod read_proc;
 
-use print_results::*;
-use read_proc::*;
+use print_results::print_smaps_result;
+use read_proc::read_smaps_rollup;
 
 fn main() {
     //use the clap crate to parse the arguments
